@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Bourdon–Vos Testi</title>
+<style>
+body {
+  font-family: Arial;
+  margin: 40px;
+}
+#stimulus {
+  font-size: 42px;
+  letter-spacing: 8px;
+  margin-top: 40px;
+  font-weight: bold;
+}
+button {
+  margin-top: 20px;
+  padding: 12px 20px;
+  font-size: 18px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Bourdon–Vos Testi</h2>
+
+<div>
+  Katılımcı ID: <input id="pid" />
+</div>
+
+<div id="stimulus"></div>
+
+<button id="startBtn">Testi Başlat</button>
+<button id="markBtn" style="display:none;">İşaretle</button>
+
+<div id="result"></div>
+
+<script>
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx4VcKO3WL6hjDEZbQVGx8lSqJp52KbVb6hgxLKYGa1AIJ2gwTk62dbHo7OlCBcmYpI/exec"; 
+
+let index = 0;
+let marks = 0;
+let startTime = 0;
+let stimuli = [];
+
+function generateStimuli() {
+  const chars = ["b","d","p","q"];
+  let s = [];
+  for (let i=0; i<200; i++){
+    s.push(chars[Math.floor(Math.random()*chars.length)]);
+  }
+  return s;
+}
+
+function showStimulus() {
+  if (index >= stimuli.length) {
+    finishTest();
+    return;
+  }
+  document.getElementById("stimulus").textContent = stimuli[index];
+  index++;
+}
+
+function finishTest() {
+  let totalTime = (Date.now() - startTime)/1000;
+
+  let data = {
+    participant: document.getElementById("pid").value,
+    score: marks,
+    time: totalTime,
+    raw: JSON.stringify(stimuli)
+  };
+
+  document.getElementById("result").innerHTML =
+    "Puan: " + marks + "<br>Süre: " + totalTime + " sn<br>Google Sheets'e aktarılıyor...";
+
+  fetch(WEB_APP_URL, {
+    method: "POST",
+    body: JSON.stringify(data)
+  })
+  .then(r=>r.text())
+  .then(()=> {
+    document.getElementById("result").innerHTML += "<br><b>Aktarım tamamlandı.</b>";
+  });
+}
+
+document.getElementById("startBtn").onclick = () => {
+  stimuli = generateStimuli();
+  index = 0;
+  marks = 0;
+
+  startTime = Date.now();
+  document.getElementById("markBtn").style.display = "inline-block";
+
+  setInterval(showStimulus, 1000);
+};
+
+document.getElementById("markBtn").onclick = () => {
+  marks++;
+};
+</script>
+
+</body>
+</html>
